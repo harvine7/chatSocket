@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>Real-time Chat App</title>
+
+    <link rel="icon" href="http://www.freepngimg.com/download/chat/12-2-chat-png.png">
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <style>
+    form {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+    }
+    input[type='text']#text_box {
+    float: right;
+    }
+    input[type='text']#user_name {
+    width: 70%;
+    display: block;
+    margin: 5% auto;
+    }
+
+    button.myBtn {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        border-radius: 0 !important;
+        background-color: #db7979;
+        color: white;
+        font-weight: bold;
+    }
+    button.myBtn2 {
+        border-radius: 0 !important;
+        background-color: #db7979;
+        color: white;
+        font-weight: bold;
+        display: block;
+        margin: 10% auto;
+        width: 50%;
+        transition: all 0.5s;
+    }
+    button.myBtn2:hover {
+        color: white;
+        background-color: #a72a2a;
+    }
+    div#chatroom {
+        display: block;
+    }
+    ul#messages {
+        padding-left: 10px !important;
+        font-size: 18px;
+        float: left;
+    }
+    ul#user_lists {
+        float: left;
+    }
+    ul#messages li:nth-child(even) {
+        list-style: none;
+        background-color: #333;
+        padding: 15px 30px 15px 10px;
+        border-radius: 10px;
+        color: white;
+        margin: 15px 0;
+    }
+    ul#messages li:nth-child(odd) {
+        list-style: none;
+        background-color: #f1f196;
+        padding: 15px 30px 15px 5px;
+        border-radius: 10px;
+    }
+    .hidden {
+        display: none !important;
+    }
+    #rightbox {
+        width: 100%;
+    }
+    #leftbox {
+        width: 100%;
+    }
+    </style>
+
+</head>
+<body>
+    <div id="homepage">
+        <h1 class="text-center">Welcome to <br> Real-time Chat App</h1>
+        <h4 class="text-center">Designed & Developed by Harvine</h4>
+        <input type="text" id="user_name" class="form-control" placeholder="Username">
+        <button id="submit_name" type="submit" class="btn myBtn2">Join <i class="fa fa-sign-in" aria-hidden="true"></i></button>
+    </div>
+
+
+    <div id="chatroom" class="hidden">
+        <div id="rightbox">
+            <h3>Active users</h3>
+            <ul id="user_lists"></ul>
+        </div>
+        <div id="leftbox">
+            <ul id="messages"></ul>
+        </div>
+
+        <form action="">
+            <input type="text" id="text_box" class="form-control" placeholder="Chat">
+            <button type="submit" class="btn myBtn">Send</button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+        var username = '';
+
+        $('form').submit(function(){
+            username = $('#user_name').val();
+            socket.emit('newMessage', username + ': ' + $('#text_box').val());
+            $('#text_box').val('');
+            return false;
+        });
+
+        //User lists
+        socket.on('addOnlineUsers', function(usernames){
+            $('#user_lists').empty();
+
+            for(var i=0; i<usernames.length;i++) {
+                $('#user_lists').append($('<li id="user_' + usernames[i] + '">').text(usernames[i]));
+            }
+        });
+
+        //When user disconnected
+        socket.on('disconnect', function(user){
+            $('#user_' + username).remove();
+        });
+
+        //Show the message
+        socket.on('newMessage', function(msg){
+            $('#messages').append($('<li>').text(msg));
+        });
+
+        //When user register their username
+        $('#submit_name').click(function() {
+            //Validate username
+            if($('#user_name') != '') {
+                username = $('#user_name').val();
+                socket.emit('registerUser', username);
+            }
+        });
+
+        //Receiving respond from server when register
+        socket.on('registerRespond', function(status){
+            if(status == false) {
+                alert('Username already used!')
+            }
+            else{
+                $('#chatroom').removeClass('hidden');
+                $('#homepage').addClass('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
